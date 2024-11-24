@@ -5,7 +5,7 @@ export PROJECT_NAME=myst-demo
 export PROJECT_ROOT=$PWD
 
 # Jupyter
-export JUPYTER_DATA_DIR=${JUPYTER_DATA_DIR:-.build/jupyter}
+export JUPYTER_DATA_DIR=${PROJECT_ROOT}/.build/jupyter
 
 # Python versions
 export VERSION=${VERSION:-0.1-dev}

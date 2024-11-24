@@ -147,6 +147,20 @@ PHONIES := $(PHONIES) venv
 # Articles
 #-------------------------------------------------------------------------------
 
+$(ARTICLES_DIR)/%/.venv/bin/activate: $(ARTICLES_DIR)/%/pyproject.toml
+	uv sync --directory "$(ARTICLES_DIR)/$*"
+	
+	touch $@
+
+$(JUPYTER_DATA_DIR)/kernels/%/kernel.json: $(ARTICLES_DIR)/%/.venv/bin/activate
+	@echo
+	@echo -e "$(COLOR_H1)# Configure kernel $*$(COLOR_RESET)"
+	@echo
+
+	source "$<" && python -m ipykernel install --user --name "$*" --display-name "$*"
+	
+	touch $@
+
 $(ARTICLES_DIR)/%/myst.yml: $(ARTICLES_DIR)/%/article.yml | $(VENV)
 	@echo
 	@echo -e "$(COLOR_H1)# Configure article $*$(COLOR_RESET)"
@@ -156,7 +170,7 @@ $(ARTICLES_DIR)/%/myst.yml: $(ARTICLES_DIR)/%/article.yml | $(VENV)
 	
 	touch $@
 
-$(ARTICLES_DIR)/%/_build/html/index.html: $(ARTICLES_DIR)/%/* | $(VENV)
+$(ARTICLES_DIR)/%/_build/html/index.html: $(ARTICLES_DIR)/%/* $(JUPYTER_DATA_DIR)/kernels/%/kernel.json | $(VENV)
 	@echo
 	@echo -e "$(COLOR_H1)# Build article $*$(COLOR_RESET)"
 	@echo
@@ -253,6 +267,8 @@ clean-venv:
 clean-articles:
 	for article_id in $(ARTICLE_IDS); do \
 	    $(RM) "$(ARTICLES_DIR)/$${article_id}/_build"; \
+	    $(RM) "$(ARTICLES_DIR)/$${article_id}/.venv"; \
+	    $(RM) "$(JUPYTER_DATA_DIR)/kernels/$${article_id}"; \
 	done
 
 clean-site:
