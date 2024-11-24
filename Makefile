@@ -111,7 +111,7 @@ PHONIES :=
 # Targets
 ################################################################################
 
-all: venv
+all: site
 	@echo
 	@echo -e "$(COLOR_H1)# $(PROJECT_NAME)$(COLOR_RESET)"
 	@echo
@@ -266,6 +266,7 @@ clean-venv:
 
 clean-articles:
 	for article_id in $(ARTICLE_IDS); do \
+	    $(RM) "$(ARTICLES_DIR)/$${article_id}/myst.yml"; \
 	    $(RM) "$(ARTICLES_DIR)/$${article_id}/_build"; \
 	    $(RM) "$(ARTICLES_DIR)/$${article_id}/.venv"; \
 	    $(RM) "$(JUPYTER_DATA_DIR)/kernels/$${article_id}"; \
