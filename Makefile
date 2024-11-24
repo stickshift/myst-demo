@@ -147,14 +147,23 @@ PHONIES := $(PHONIES) venv
 # Articles
 #-------------------------------------------------------------------------------
 
-$(ARTICLES_DIR)/%/_build/html/index.html: $(ARTICLES_DIR)/$*/* | $(VENV)
+$(ARTICLES_DIR)/%/myst.yml: $(ARTICLES_DIR)/%/article.yml | $(VENV)
+	@echo
+	@echo -e "$(COLOR_H1)# Configure article $*$(COLOR_RESET)"
+	@echo
+
+	source "$(VENV)" && python -m stickshift.configure_article $<
+	
+	touch $@
+
+$(ARTICLES_DIR)/%/_build/html/index.html: $(ARTICLES_DIR)/%/* | $(VENV)
 	@echo
 	@echo -e "$(COLOR_H1)# Build article $*$(COLOR_RESET)"
 	@echo
 
 	source "$(VENV)" && \
 	  cd "$(ARTICLES_DIR)/$*" && \
-	  BASE_URL="/articles/$*" myst build --html 
+	  BASE_URL="/articles/$*" myst build --html --execute
 	
 	touch $@
 

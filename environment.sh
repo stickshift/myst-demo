@@ -4,6 +4,10 @@
 export PROJECT_NAME=myst-demo
 export PROJECT_ROOT=$PWD
 
+# Jupyter
+export JUPYTER_DATA_DIR=${JUPYTER_DATA_DIR:-.build/jupyter}
+
+# Python versions
 export VERSION=${VERSION:-0.1-dev}
 export PY_VERSION=$(echo $VERSION | sed 's/-/\.dev0+/')
 
@@ -20,6 +24,7 @@ tmp_project_env=$(mktemp)
 project_variables=(
   PROJECT_ROOT
   PROJECT_NAME
+  JUPYTER_DATA_DIR
   VERSION
   PY_VERSION
   SOURCE_DATE_EPOCH
