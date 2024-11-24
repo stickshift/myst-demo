@@ -12,7 +12,10 @@ Site is built from multiple independent articles. All of the content for each ar
 # Configure environment
 source environment.sh
 
-# Build all artifacts
+# Build article artifacts
+make articles
+
+# Combine articles into complete site
 make site
 
 # Serve artifacts locally

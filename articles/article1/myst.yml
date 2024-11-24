@@ -1,0 +1,28 @@
+version: 1
+project:
+  id: b6b1ed6a-f685-4e5d-b90d-98f8fb37c62b
+  license:
+    content: CC-BY-SA-3.0
+    code: MIT
+  github: https://github.com/stickshift/myst-demo
+  open_access: true
+  subject: tutorial
+  venue:
+    title: Stickshift
+  authors:
+    - name: Andrew Young
+      email: joven@alum.wpi.edu
+      github: stickshift
+  banner: ./resources/banner.png
+  title: Lorem Ipsum Dolor
+  subtitle: Core Concepts
+  abstract: |
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  date: 2024-11-23
+  toc:
+    - file: index.md
+site:
+  template: article-theme
+  # options:
+  #   favicon: favicon.ico
+  #   logo: site_logo.png
