@@ -72,9 +72,8 @@ VENV := $(VENV_ROOT)/bin/activate
 #-------------------------------------------------------------------------------
 
 ARTICLES_DIR := articles
-ARTICLES_BUILD_DIR := $(BUILD_DIR)/articles
 ARTICLE_IDS := $(foreach dir,$(shell find $(ARTICLES_DIR) -mindepth 1 -maxdepth 1 -type d),$(notdir $(dir)))
-ARTICLES := $(foreach id,$(ARTICLE_IDS),$(ARTICLES_BUILD_DIR)/$(id)/build.ts)
+ARTICLES := $(foreach id,$(ARTICLE_IDS),$(ARTICLES_DIR)/$(id)/_build/html/index.html)
 
 
 #-------------------------------------------------------------------------------
@@ -82,7 +81,8 @@ ARTICLES := $(foreach id,$(ARTICLE_IDS),$(ARTICLES_BUILD_DIR)/$(id)/build.ts)
 #-------------------------------------------------------------------------------
 
 SITE_BUILD_DIR := $(BUILD_DIR)/site
-SITE := $(SITE_BUILD_DIR)/build.ts
+ARTICLE_BUNDLES := $(foreach id,$(ARTICLE_IDS),$(SITE_BUILD_DIR)/articles/$(id)/index.html)
+SITE := $(SITE_BUILD_DIR)/index.html
 
 
 #-------------------------------------------------------------------------------
@@ -147,23 +147,18 @@ PHONIES := $(PHONIES) venv
 # Articles
 #-------------------------------------------------------------------------------
 
-$(ARTICLES_BUILD_DIR):
-	mkdir -p $@
-
-$(ARTICLES_BUILD_DIR)/%/build.ts: $(ARTICLES_DIR)/%/* | $(ARTICLES_BUILD_DIR)
+$(ARTICLES_DIR)/%/_build/html/index.html: $(ARTICLES_DIR)/$*/* | $(VENV)
 	@echo
-	@echo -e "$(COLOR_H1)# Article $$(basename $$(dirname $@))$(COLOR_RESET)"
+	@echo -e "$(COLOR_H1)# Build article $*$(COLOR_RESET)"
 	@echo
 
-	mkdir -p $$(dirname $@)
-	cp -r $(ARTICLES_DIR)/$$(basename $$(dirname $@))/* $$(dirname $@)
-	cd "$$(dirname $@)" && BASE_URL="/articles/$$(basename $$(dirname $@))" myst build --html
-
+	source "$(VENV)" && \
+	  cd "$(ARTICLES_DIR)/$*" && \
+	  BASE_URL="/articles/$*" myst build --html 
+	
 	touch $@
 
 articles: $(ARTICLES)
-	@echo "article ids: $(ARTICLE_IDS)"
-
 PHONIES := $(PHONIES) articles
 
 
@@ -171,26 +166,28 @@ PHONIES := $(PHONIES) articles
 # Site
 #-------------------------------------------------------------------------------
 
-$(SITE_BUILD_DIR):
-	mkdir -p $@
+$(SITE_BUILD_DIR)/articles/%/index.html: $(ARTICLES_DIR)/%/_build/html/index.html
+	@echo
+	@echo -e "$(COLOR_H1)# Bundle article $*$(COLOR_RESET)"
+	@echo
 
-$(SITE): $(ARTICLES) | $(SITE_BUILD_DIR)
+	mkdir -p $(dir $@)
+	
+	rsync -av $(ARTICLES_DIR)/$*/_build/html/* $(dir $@)
+	
+	touch $@
+
+$(SITE): $(ARTICLE_BUNDLES)
 	@echo
 	@echo -e "$(COLOR_H1)# Site$(COLOR_RESET)"
 	@echo
-
-	for article_id in $(ARTICLE_IDS); do \
-		$(RM) "$(SITE_BUILD_DIR)/html/articles/$${article_id}"; \
-		mkdir -p "$(SITE_BUILD_DIR)/html/articles/$${article_id}"; \
-		cp -r "$(ARTICLES_BUILD_DIR)/$${article_id}/_build/html/*" "$(SITE_BUILD_DIR)/html/articles/$${article_id}"; \
-	done
 
 	touch $@
 
 site: $(SITE)
 
 deploy: $(SITE)
-	source $(VENV) && python -m http.server -d $(SITE_BUILD_DIR)/html
+	source "$(VENV)" && python -m http.server -d $(SITE_BUILD_DIR)
 
 PHONIES := $(PHONIES) site deploy
 
@@ -204,14 +201,14 @@ tests: $(VENV)
 	@echo -e "$(COLOR_H1)# Tests$(COLOR_RESET)"
 	@echo
 
-	source $(VENV) && pytest $(PYTEST_OPTS) tests
+	source "$(VENV)" && pytest $(PYTEST_OPTS) tests
 
 coverage: $(VENV)
 	@echo
 	@echo -e "$(COLOR_H1)# Coverage$(COLOR_RESET)"
 	@echo
 	mkdir -p $$(dirname $(BUILD_DIR)/coverage)
-	source $(VENV) && pytest $(PYTEST_OPTS) --cov=xformers --cov-report=html:$(BUILD_DIR)/coverage tests
+	source "$(VENV)" && pytest $(PYTEST_OPTS) --cov=xformers --cov-report=html:$(BUILD_DIR)/coverage tests
 
 PHONIES := $(PHONIES) tests coverage
 
@@ -221,13 +218,13 @@ PHONIES := $(PHONIES) tests coverage
 #-------------------------------------------------------------------------------
 
 lint-fmt: venv
-	source $(VENV) && \
+	source "$(VENV)" && \
 	  ruff format $(RUFF_FORMAT_OPTS) && \
 	  ruff check --fix $(RUFF_CHECK_OPTS) && \
 	  make lint-style
 
 lint-style: venv
-	source $(VENV) && \
+	source "$(VENV)" && \
 	  ruff check $(RUFF_CHECK_OPTS) && \
 	  ruff format --check $(RUFF_FORMAT_OPTS)
 
@@ -242,12 +239,20 @@ clean-cache:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 
 clean-venv:
-	$(RM) $(VENV_ROOT)
+	$(RM) "$(VENV_ROOT)"
 
-clean-build:
-	$(RM) $(BUILD_DIR)
+clean-articles:
+	for article_id in $(ARTICLE_IDS); do \
+	    $(RM) "$(ARTICLES_DIR)/$${article_id}/_build"; \
+	done
 
-clean: clean-cache clean-venv clean-build
-PHONIES := $(PHONIES) clean-cache clean-venv clean-build
+clean-site:
+	$(RM) "$(SITE_BUILD_DIR)"
+
+clean-build: clean-articles clean-site
+	$(RM) "$(BUILD_DIR)"
+
+clean: clean-cache clean-venv clean-articles clean-site clean-build 
+PHONIES := $(PHONIES) clean-cache clean-venv clean-articles clean-site clean-build 
 
 .PHONY: $(PHONIES)
