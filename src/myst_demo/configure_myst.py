@@ -4,15 +4,47 @@ import shutil
 from pathlib import Path
 from uuid import uuid4
 
+# Constants
+github_url = "https://github.com/stickshift/myst-demo"
+
+stickshift_metadata = {
+    "github": github_url,
+    "license": {
+        "content": "CC-BY-SA-3.0",
+        "code": "MIT",
+    },
+    "open_access": True,
+    "subject": "tutorial",
+    "venue": {
+        "title": "Stickshift",
+    },
+    "authors": [
+        {
+            "name": "Andrew Young",
+            "email": "joven@alum.wpi.edu",
+            "github": "stickshift",
+        },
+    ],
+    "toc": [
+        {
+            "file": "index.md",
+        },
+    ],
+}
+
 
 @click.command()
 @click.argument(
     "article-path",
     type=click.Path(exists=True, path_type=Path),
 )
-def configure_article(article_path: Path):
-    """Configure a MyST article from an article.yml file."""
+def configure_myst(article_path: Path):
+    """Generate myst.yml from article.yml."""
     
+    # Validate parameters
+    if not article_path.is_dir():
+        raise ValueError(f"Article path {article_path} is not a directory")
+
     article_manifest = article_path / "article.yml"
     myst_manifest = article_path / "myst.yml"
 
@@ -23,34 +55,13 @@ def configure_article(article_path: Path):
     myst_config = {
         "version": 1,
         "project": {
+            **stickshift_metadata,
             "id": uuid4().hex,
-            "license": {
-                "content": "CC-BY-SA-3.0",
-                "code": "MIT",
-            },
-            "github": "https://github.com/stickshift/myst-demo",
-            "open_access": True,
-            "subject": "tutorial",
-            "venue": {
-                "title": "Stickshift",
-            },
-            "authors": [
-                {
-                    "name": "Andrew Young",
-                    "email": "joven@alum.wpi.edu",
-                    "github": "stickshift",
-                },
-            ],
             "banner": article_config["banner"],
             "title": article_config["title"],
             "subtitle": article_config["subtitle"],
             "abstract": article_config["abstract"],
             "date": article_config["date"],
-            "toc": [
-                {
-                    "file": "index.md",
-                },
-            ],
         },
         "site": {
             "template": "article-theme",
@@ -64,4 +75,4 @@ def configure_article(article_path: Path):
     click.echo(f"Wrote {myst_manifest}")
 
 if __name__ == "__main__":
-    configure_article()
+    configure_myst()

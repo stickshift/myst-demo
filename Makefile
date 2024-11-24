@@ -73,8 +73,11 @@ VENV := $(VENV_ROOT)/bin/activate
 
 ARTICLES_DIR := articles
 ARTICLE_IDS := $(foreach dir,$(shell find $(ARTICLES_DIR) -mindepth 1 -maxdepth 1 -type d),$(notdir $(dir)))
-ARTICLES := $(foreach id,$(ARTICLE_IDS),$(ARTICLES_DIR)/$(id)/_build/html/index.html)
-
+ARTICLE_VENVS := $(foreach id,$(ARTICLE_IDS),$(ARTICLES_DIR)/$(id)/.venv/bin/activate)
+ARTICLE_KERNEL_SPECS := $(foreach id,$(ARTICLE_IDS),$(JUPYTER_DATA_DIR)/kernels/$(id)/kernel.json)
+ARTICLE_MANIFESTS := $(foreach id,$(ARTICLE_IDS),$(ARTICLES_DIR)/$(id)/myst.yml)
+ARTICLE_BUILDS := $(foreach id,$(ARTICLE_IDS),$(ARTICLES_DIR)/$(id)/_build/html/index.html)
+ARTICLES := $(ARTICLE_VENVS) $(ARTICLE_KERNEL_SPECS) $(ARTICLE_MANIFESTS) $(ARTICLE_BUILDS)
 
 #-------------------------------------------------------------------------------
 # Site
@@ -166,11 +169,11 @@ $(ARTICLES_DIR)/%/myst.yml: $(ARTICLES_DIR)/%/article.yml | $(VENV)
 	@echo -e "$(COLOR_H1)# Configure article $*$(COLOR_RESET)"
 	@echo
 
-	source "$(VENV)" && python -m stickshift.configure_article $<
+	source "$(VENV)" && python -m myst_demo.configure_myst $(ARTICLES_DIR)/$*
 	
 	touch $@
 
-$(ARTICLES_DIR)/%/_build/html/index.html: $(ARTICLES_DIR)/%/* $(JUPYTER_DATA_DIR)/kernels/%/kernel.json | $(VENV)
+$(ARTICLES_DIR)/%/_build/html/index.html: $(ARTICLES_DIR)/%/* $(ARTICLES_DIR)/%/myst.yml $(JUPYTER_DATA_DIR)/kernels/%/kernel.json | $(VENV)
 	@echo
 	@echo -e "$(COLOR_H1)# Build article $*$(COLOR_RESET)"
 	@echo
@@ -282,3 +285,5 @@ clean: clean-cache clean-venv clean-articles clean-site clean-build
 PHONIES := $(PHONIES) clean-cache clean-venv clean-articles clean-site clean-build 
 
 .PHONY: $(PHONIES)
+
+
